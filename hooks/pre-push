@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+## exec unit_test when push to origin
+
+./build/unit_test.sh
