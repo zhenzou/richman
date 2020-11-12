@@ -36,6 +36,12 @@ func (c *cronScheduler) signal() {
 
 func (c *cronScheduler) Start(ctx context.Context) <-chan struct{} {
 	c.cron.Start()
+	go func() {
+		select {
+		case <-ctx.Done():
+			c.cron.Stop()
+		}
+	}()
 	return c.ch
 }
 
@@ -47,4 +53,5 @@ func (c *cronScheduler) Shutdown(ctx context.Context) {
 	case <-cronCtx.Done():
 		log.Println("shutdown success")
 	}
+	close(c.ch)
 }

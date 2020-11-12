@@ -1,0 +1,13 @@
+tasks:
+  get-stocks:
+    type: "stocks"
+    params:
+      provider: "sina"
+      stocks: [ "sz002594" ]
+
+jobs:
+  monitor-stocks:
+    schedule:
+      type: "cron"
+      cron: '*/6 * * * * *'
+    task: "get-stocks"

@@ -21,7 +21,7 @@ type sina struct {
 }
 
 func (s *sina) List(ctx context.Context, codes ...string) ([]Stock, error) {
-	//var hq_str_sh601006="大秦铁路,6.480,6.490,6.520,6.550,6.450,6.520,6.530,26048333,169706151.000,456838,6.520,843440,6.510,305800,6.500,334600,6.490,158700,6.480,395300,6.530,1535656,6.540,2976299,6.550,1109280,6.560,807600,6.570,2020-11-11,15:00:02,00,";
+	// var hq_str_sh601006="大秦铁路,6.480,6.490,6.520,6.550,6.450,6.520,6.530,26048333,169706151.000,456838,6.520,843440,6.510,305800,6.500,334600,6.490,158700,6.480,395300,6.530,1535656,6.540,2976299,6.550,1109280,6.560,807600,6.570,2020-11-11,15:00:02,00,";
 	response, err := s.cli.R().Get("list=" + strings.Join(codes, ","))
 	if err != nil {
 		return nil, err
@@ -66,7 +66,8 @@ func (s *sina) convertToStock(line string) Stock {
 	}
 	return Stock{
 		Name:         units[0],
-		BeginPrice:   parsePrice(units[1]),
+		OpenPrice:    parsePrice(units[1]),
+		BeginPrice:   parsePrice(units[2]),
 		NowPrice:     parsePrice(units[3]),
 		HighestPrice: parsePrice(units[4]),
 		LowestPrice:  parsePrice(units[5]),
