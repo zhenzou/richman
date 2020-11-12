@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -20,11 +21,12 @@ var (
 	release = "unknown"
 	repo    = "unknown"
 	commit  = "unknown"
-	debug   = true
+	debug   = "true"
 )
 
 func init() {
-	if debug {
+
+	if strings.EqualFold(debug, "true") {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	} else {
 		log.SetFlags(0)
@@ -177,6 +179,9 @@ func waitSignal(signals ...os.Signal) {
 }
 
 func main() {
+
+	log.Printf("release: %s, repo: %s, commit: %s\n", release, repo, commit)
+
 	conf := loadConf()
 
 	tasks := initTasks(conf)

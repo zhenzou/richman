@@ -54,4 +54,5 @@ tmp/
 *_server
 *_cmd
 *.log
+build
 

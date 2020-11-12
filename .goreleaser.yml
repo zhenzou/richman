@@ -1,0 +1,54 @@
+dist: ./build/release
+before:
+  hooks:
+    - go mod download
+builds:
+  - id: richman
+    main: ./cmd/richman/main.go
+    binary: bin/{{ .ProjectName }}
+    ldflags:
+      - -s -w
+      - -X main.debug=false
+      - -X main.release={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.repo={{.GitURL}}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+archives:
+  - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    wrap_in_directory: true
+    format: tar.gz
+    format_overrides: # archive as zip on Windows
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: desc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+nfpms:
+  - file_name_template: '{{ .ProjectName }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage: https://github.com/zhenzou/{{ .ProjectName }}
+    description: Simple tool to monitor stock price
+    maintainer: September <zzzhen1994@gmail.com>
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+    dependencies:
+      - git
+    recommends:
+      - golang
