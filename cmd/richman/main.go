@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,6 +15,21 @@ import (
 
 	"github.com/zhenzou/richman"
 )
+
+var (
+	release = "unknown"
+	repo    = "unknown"
+	commit  = "unknown"
+	debug   = true
+)
+
+func init() {
+	if debug {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	} else {
+		log.SetFlags(0)
+	}
+}
 
 const confFile = "/.richman/conf.yaml"
 
@@ -36,38 +50,38 @@ jobs:
 `
 
 func buildConfPath() string {
-	user, err := user.Current()
+	u, err := user.Current()
 	if err != nil {
-		fmt.Println("get user error:", err.Error())
+		log.Println("get current user error:", err.Error())
 		os.Exit(-1)
 	}
-	return user.HomeDir + confFile
+	return u.HomeDir + confFile
 }
 
 func loadConf() Config {
 	path := buildConfPath()
 	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
-		fmt.Println("write conf file error:", err.Error())
+		log.Println("write conf file error:", err.Error())
 		os.Exit(-1)
 	}
 	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		err := ioutil.WriteFile(path, []byte(confSample), 0644)
 		if err != nil {
-			fmt.Println("write conf file error:", err.Error())
+			log.Println("write conf file error:", err.Error())
 			os.Exit(-1)
 		}
 	}
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("read conf file error:", err.Error())
+		log.Println("read conf file error:", err.Error())
 		os.Exit(-1)
 	}
 	conf := Config{}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		fmt.Println("read conf file error:", err.Error())
+		log.Println("read conf file error:", err.Error())
 		os.Exit(-1)
 	}
 	return conf
