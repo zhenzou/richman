@@ -9,5 +9,6 @@ jobs:
   monitor-stocks:
     schedule:
       type: "cron"
-      cron: '*/6 * * * * *'
+      params:
+        cron: '*/6 * * * * *'
     task: "get-stocks"

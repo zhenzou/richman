@@ -5,16 +5,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/signal"
 	"os/user"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/zhenzou/richman"
+	"github.com/zhenzou/richman/utils"
 )
 
 var (
@@ -47,7 +46,8 @@ jobs:
   monitor-stocks:
     schedule:
       type: "cron"
-      cron: '*/6 * * * * *'
+      params:
+        cron: '*/6 * * * * *'
     task: "get-stocks"
 `
 
@@ -55,7 +55,7 @@ func buildConfPath() string {
 	u, err := user.Current()
 	if err != nil {
 		log.Println("get current user error:", err.Error())
-		os.Exit(-1)
+		utils.Die()
 	}
 	return u.HomeDir + confFile
 }
@@ -65,26 +65,26 @@ func loadConf() Config {
 	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
 		log.Println("write conf file error:", err.Error())
-		os.Exit(-1)
+		utils.Die()
 	}
 	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		err := ioutil.WriteFile(path, []byte(confSample), 0644)
 		if err != nil {
 			log.Println("write conf file error:", err.Error())
-			os.Exit(-1)
+			utils.Die()
 		}
 	}
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Println("read conf file error:", err.Error())
-		os.Exit(-1)
+		utils.Die()
 	}
 	conf := Config{}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
 		log.Println("read conf file error:", err.Error())
-		os.Exit(-1)
+		utils.Die()
 	}
 	return conf
 }
@@ -95,29 +95,16 @@ type Config struct {
 }
 
 type Task struct {
-	Type   string     `yaml:"type"`
-	Params RawMessage `yaml:"params"`
+	Type   string         `yaml:"type"`
+	Params richman.Params `yaml:"params"`
 }
 
 type Job struct {
 	Schedule struct {
-		Type string `yaml:"type"`
-		Cron string `yaml:"cron"`
+		Type   string         `yaml:"type"`
+		Params richman.Params `yaml:"params"`
 	} `yaml:"schedule"`
 	Task string `yaml:"task"`
-}
-
-type RawMessage struct {
-	unmarshal func(interface{}) error
-}
-
-func (msg *RawMessage) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	msg.unmarshal = unmarshal
-	return nil
-}
-
-func (msg *RawMessage) Unmarshal(v interface{}) error {
-	return msg.unmarshal(v)
 }
 
 func initTasks(conf Config) map[string]richman.Task {
@@ -130,7 +117,7 @@ func initTasks(conf Config) map[string]richman.Task {
 			err := task.Params.Unmarshal(&cfg)
 			if err != nil {
 				log.Println("read stock config error:", err.Error())
-				os.Exit(-1)
+				utils.Die()
 			}
 			stockTask := richman.NewStockTask(cfg)
 			tasks[name] = stockTask
@@ -149,11 +136,15 @@ func initJobs(conf Config, tasks map[string]richman.Task) map[string]richman.Job
 	for name, job := range conf.Jobs {
 		switch job.Schedule.Type {
 		case "cron":
-			scheduler := richman.NewCronScheduler(job.Schedule.Cron)
-
+			cfg := richman.CronSchedulerConfig{}
+			err := job.Schedule.Params.Unmarshal(&cfg)
+			if err != nil {
+				log.Printf("[job] %s read config error \n", name)
+			}
+			scheduler := richman.NewCronScheduler(cfg)
 			task, ok := tasks[job.Task]
 			if !ok {
-				log.Printf("task %s not found for job %s\n", job.Task, name)
+				log.Printf("[job] task %s not found for %s\n", job.Task, name)
 			}
 			jobs[name] = richman.NewJob(name, scheduler, task)
 		default:
@@ -162,20 +153,6 @@ func initJobs(conf Config, tasks map[string]richman.Task) map[string]richman.Job
 	}
 
 	return jobs
-}
-
-func WaitStopSignal() {
-	waitSignal(os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT)
-}
-
-func waitSignal(signals ...os.Signal) {
-	signalChan := make(chan os.Signal)
-	defer func() {
-		signal.Stop(signalChan)
-		close(signalChan)
-	}()
-	signal.Notify(signalChan, signals...)
-	<-signalChan
 }
 
 func main() {
@@ -194,7 +171,7 @@ func main() {
 		err := monitor.AddJob(name, job)
 		if err != nil {
 			log.Println("add job error:", err.Error())
-			os.Exit(-1)
+			utils.Die()
 		}
 	}
 
@@ -202,7 +179,7 @@ func main() {
 	defer cancelFunc()
 	monitor.Start(ctx)
 
-	WaitStopSignal()
+	utils.WaitStopSignal()
 
 	ctx, cancelFun2 := context.WithTimeout(ctx, 10*time.Second)
 	defer cancelFun2()

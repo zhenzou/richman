@@ -12,13 +12,17 @@ type Scheduler interface {
 	Shutdown(ctx context.Context)
 }
 
+type CronSchedulerConfig struct {
+	Cron string `yaml:"cron"`
+}
+
 // NewCronScheduler
-func NewCronScheduler(spec string) Scheduler {
+func NewCronScheduler(config CronSchedulerConfig) Scheduler {
 	c := &cronScheduler{
 		ch:   make(chan struct{}),
 		cron: cron.New(cron.WithSeconds()),
 	}
-	_, err := c.cron.AddFunc(spec, c.signal)
+	_, err := c.cron.AddFunc(config.Cron, c.signal)
 	if err != nil {
 		panic(err)
 	}
