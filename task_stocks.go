@@ -7,6 +7,8 @@ import (
 	"github.com/zhenzou/richman/pkg/stock"
 )
 
+type StockHandler = func(ctx context.Context, stock stock.Stock) error
+
 type StockTaskConfig struct {
 	Provider string   `yaml:"provider"`
 	Stocks   []string `yaml:"stocks"`
