@@ -79,7 +79,8 @@ func initJobs(conf conf.Config, tasks map[string]richman.Task) map[string]richma
 }
 
 var (
-	monitor richman.Monitor
+	monitor    richman.Monitor
+	titleQueue chan string
 )
 
 func initMonitor(config conf.Config) {
@@ -99,12 +100,42 @@ func initMonitor(config conf.Config) {
 }
 
 func handleStock(ctx context.Context, stock stock.Stock) error {
-	systray.SetTitle(fmt.Sprintf("%s %s", stock.Name, stock.IncreaseRate()))
+	title := fmt.Sprintf("%s %s", stock.Name, stock.IncreaseRate())
+	enqueue(title)
 	return nil
+}
+
+func enqueue(title string) {
+	log.Println("enqueue:", title)
+	select {
+	case titleQueue <- title:
+	default:
+		log.Println("[queue] drop ", title)
+	}
+}
+
+func loopUpdateTitle() {
+	tick := time.Tick(1 * time.Second)
+	for _ = range tick {
+		select {
+		case title := <-titleQueue:
+			systray.SetTitle(title)
+		default:
+		}
+	}
 }
 
 func start() {
 	systray.SetTitle("Richman")
+
+	config := conf.Load()
+
+	initMonitor(config)
+
+	titleQueue = make(chan string, 2)
+
+	go loopUpdateTitle()
+
 	monitor.Start()
 }
 
@@ -117,10 +148,6 @@ func exit() {
 func main() {
 
 	log.Printf("release: %s, repo: %s, commit: %s\n", release, repo, commit)
-
-	config := conf.Load()
-
-	initMonitor(config)
 
 	systray.Run(start, exit)
 }

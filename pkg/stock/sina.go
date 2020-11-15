@@ -21,8 +21,10 @@ type sina struct {
 }
 
 func (s *sina) List(ctx context.Context, codes ...string) ([]Stock, error) {
-	// var hq_str_sh601006="大秦铁路,6.480,6.490,6.520,6.550,6.450,6.520,6.530,26048333,169706151.000,456838,6.520,843440,6.510,305800,6.500,334600,6.490,158700,6.480,395300,6.530,1535656,6.540,2976299,6.550,1109280,6.560,807600,6.570,2020-11-11,15:00:02,00,";
-	response, err := s.cli.R().Get("list=" + strings.Join(codes, ","))
+	response, err := s.cli.
+		R().
+		SetContext(ctx).
+		Get("list=" + strings.Join(codes, ","))
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +40,14 @@ func (s *sina) parseRawResponse(resp string, codes []string) ([]Stock, error) {
 		resp = strings.ReplaceAll(resp, fmt.Sprintf("var hq_str_%s=", code), "")
 	}
 
-	lines := strings.Split(resp, ";")
+	lines := strings.Split(resp, "\n")
 
 	stocks := make([]Stock, 0, len(lines))
 
 	for _, line := range lines {
+		line = strings.TrimPrefix(line, "\"")
+		line = strings.TrimSuffix(line, "\";")
+
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
@@ -53,9 +58,6 @@ func (s *sina) parseRawResponse(resp string, codes []string) ([]Stock, error) {
 }
 
 func (s *sina) convertToStock(line string) Stock {
-
-	line = strings.TrimPrefix(line, "\"")
-	line = strings.TrimSuffix(line, ",\"")
 
 	units := strings.Split(line, ",")
 	timeStr := units[30] + "T" + units[31] + "+08:00"
