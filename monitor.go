@@ -8,7 +8,7 @@ import (
 
 type Monitor interface {
 	AddJob(name string, job Job) error
-	Start(ctx context.Context)
+	Start()
 	Stop(ctx context.Context)
 }
 
@@ -29,9 +29,9 @@ func (m *monitor) AddJob(name string, job Job) error {
 	return nil
 }
 
-func (m *monitor) Start(ctx context.Context) {
+func (m *monitor) Start() {
 	for name, job := range m.jobs {
-		m.cancelFuncs[name] = job.Schedule(ctx)
+		m.cancelFuncs[name] = job.Schedule(context.Background())
 	}
 }
 

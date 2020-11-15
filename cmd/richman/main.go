@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/getlantern/systray"
+
 	"github.com/zhenzou/richman"
 	"github.com/zhenzou/richman/conf"
+	"github.com/zhenzou/richman/pkg/stock"
 	"github.com/zhenzou/richman/utils"
 )
 
@@ -38,7 +42,7 @@ func initTasks(conf conf.Config) map[string]richman.Task {
 				log.Println("read stock config error:", err.Error())
 				utils.Die()
 			}
-			stockTask := richman.NewStockTask(cfg)
+			stockTask := richman.NewStockTask(cfg, handleStock)
 			tasks[name] = stockTask
 		default:
 			log.Printf("%s task does not support for now\n", task.Type)
@@ -74,17 +78,16 @@ func initJobs(conf conf.Config, tasks map[string]richman.Task) map[string]richma
 	return jobs
 }
 
-func main() {
+var (
+	monitor richman.Monitor
+)
 
-	log.Printf("release: %s, repo: %s, commit: %s\n", release, repo, commit)
-
-	config := conf.Load()
-
+func initMonitor(config conf.Config) {
 	tasks := initTasks(config)
 
 	jobs := initJobs(config, tasks)
 
-	monitor := richman.NewMonitor()
+	monitor = richman.NewMonitor()
 
 	for name, job := range jobs {
 		err := monitor.AddJob(name, job)
@@ -93,14 +96,31 @@ func main() {
 			utils.Die()
 		}
 	}
+}
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
-	monitor.Start(ctx)
+func handleStock(ctx context.Context, stock stock.Stock) error {
+	systray.SetTitle(fmt.Sprintf("%s %s", stock.Name, stock.IncreaseRate()))
+	return nil
+}
 
-	utils.WaitStopSignal()
+func start() {
+	systray.SetTitle("Richman")
+	monitor.Start()
+}
 
-	ctx, cancelFun2 := context.WithTimeout(ctx, 10*time.Second)
+func exit() {
+	ctx, cancelFun2 := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFun2()
 	monitor.Stop(ctx)
+}
+
+func main() {
+
+	log.Printf("release: %s, repo: %s, commit: %s\n", release, repo, commit)
+
+	config := conf.Load()
+
+	initMonitor(config)
+
+	systray.Run(start, exit)
 }
