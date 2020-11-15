@@ -1,3 +1,4 @@
+refresh: 1s
 tasks:
   get-stocks:
     type: "stocks"

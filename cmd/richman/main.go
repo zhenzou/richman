@@ -81,9 +81,10 @@ func initJobs(conf conf.Config, tasks map[string]richman.Task) map[string]richma
 var (
 	monitor    richman.Monitor
 	titleQueue chan string
+	config     conf.Config
 )
 
-func initMonitor(config conf.Config) {
+func initMonitor() {
 	tasks := initTasks(config)
 
 	jobs := initJobs(config, tasks)
@@ -115,7 +116,7 @@ func enqueue(title string) {
 }
 
 func loopUpdateTitle() {
-	tick := time.Tick(1 * time.Second)
+	tick := time.Tick(config.Refresh)
 	for _ = range tick {
 		select {
 		case title := <-titleQueue:
@@ -128,9 +129,9 @@ func loopUpdateTitle() {
 func start() {
 	systray.SetTitle("Richman")
 
-	config := conf.Load()
+	config = conf.Load()
 
-	initMonitor(config)
+	initMonitor()
 
 	titleQueue = make(chan string, 2)
 

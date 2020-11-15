@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -15,6 +16,8 @@ import (
 const confFile = "/.richman/conf.yaml"
 
 const confSample = `
+refresh: 1s
+
 tasks:
   get-stocks:
     type: "stocks"
@@ -32,8 +35,9 @@ jobs:
 `
 
 type Config struct {
-	Tasks map[string]Task
-	Jobs  map[string]Job
+	Refresh time.Duration   `yaml:"refresh"`
+	Tasks   map[string]Task `yaml:"tasks"`
+	Jobs    map[string]Job  `yaml:"jobs"`
 }
 
 type Task struct {
