@@ -12,6 +12,8 @@ import (
 	"github.com/zhenzou/richman"
 	"github.com/zhenzou/richman/conf"
 	"github.com/zhenzou/richman/pkg/stock"
+	"github.com/zhenzou/richman/tasks"
+	"github.com/zhenzou/richman/utils"
 )
 
 var (
@@ -68,13 +70,32 @@ func start() {
 
 	monitor = richman.NewMonitor(config.Monitor)
 
-	titleQueue = make(chan string, 2)
+	initTasks(config)
+
+	titleQueue = make(chan string, config.Queue)
 
 	go loopUpdateTitle()
 
 	monitor.Start()
 }
 
+func initTasks(conf conf.Config) {
+	for name, config := range conf.Tasks {
+		switch config.Type {
+		case "stocks":
+			cfg := tasks.StockConfig{}
+			err := config.Params.Unmarshal(&cfg)
+			if err != nil {
+				log.Println("read stock config error:", err.Error())
+				utils.Die()
+			}
+			task := tasks.NewStockTask(cfg, handleStock)
+			_ = monitor.RegisterTask(name, task)
+		default:
+			log.Printf("%s config does not support for now\n", config.Type)
+		}
+	}
+}
 func exit() {
 	ctx, cancelFun2 := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFun2()

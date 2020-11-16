@@ -1,12 +1,13 @@
-refresh: 1s
-monitor:
-  tasks:
-    get-stocks:
-      type: "stocks"
-      params:
-        provider: "sina"
-        stocks: [ "sz002594" ]
+refresh: "1s"
+quque: 3
+tasks:
+  get-stocks:
+    type: "stocks"
+    params:
+      provider: "sina"
+      stocks: [ "sz002594" ]
 
+monitor:
   jobs:
     monitor-stocks:
       schedule:

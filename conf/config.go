@@ -14,15 +14,16 @@ import (
 const confFile = "/.richman/conf.yaml"
 
 const confSample = `
-refresh: 1s
-monitor:
-  tasks:
-    get-stocks:
-      type: "stocks"
-      params:
-        provider: "sina"
-        stocks: [ "sz002594" ]
+refresh: "1s"
+queue: 3
+tasks:
+  get-stocks:
+    type: "stocks"
+    params:
+      provider: "sina"
+      stocks: [ "sz002594" ]
 
+monitor:
   jobs:
     monitor-stocks:
       schedule:
@@ -33,7 +34,12 @@ monitor:
 `
 
 type Config struct {
-	Refresh time.Duration  `yaml:"refresh"`
+	Refresh time.Duration `yaml:"refresh"`
+	Queue   int           `yaml:"queue"`
+	Tasks   map[string]struct {
+		Type   string         `yaml:"type"`
+		Params richman.Params `yaml:"params"`
+	} `yaml:"tasks"`
 	Monitor richman.Config `yaml:"monitor"`
 }
 
