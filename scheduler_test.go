@@ -6,9 +6,12 @@ import (
 )
 
 func Example_cronScheduler() {
-	scheduler := NewCronScheduler("*/3 * * * * *")
+	scheduler := NewCronScheduler(CronSchedulerConfig{
+		Cron: "*/3 * * * * *",
+	})
 
-	signals := scheduler.Start(context.Background())
+	signals := scheduler.Start()
+	defer scheduler.Stop(context.Background())
 
 	timer := time.After(5 * time.Second)
 	select {

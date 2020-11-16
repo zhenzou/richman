@@ -8,8 +8,8 @@ import (
 )
 
 type Scheduler interface {
-	Start(ctx context.Context) <-chan struct{}
-	Shutdown(ctx context.Context)
+	Start() <-chan struct{}
+	Stop(ctx context.Context)
 }
 
 type CronSchedulerConfig struct {
@@ -35,21 +35,19 @@ type cronScheduler struct {
 }
 
 func (c *cronScheduler) signal() {
-	c.ch <- struct{}{}
+	select {
+	case c.ch <- struct{}{}:
+	default:
+		log.Printf("[schduler] signal timeout,drop current")
+	}
 }
 
-func (c *cronScheduler) Start(ctx context.Context) <-chan struct{} {
+func (c *cronScheduler) Start() <-chan struct{} {
 	c.cron.Start()
-	go func() {
-		select {
-		case <-ctx.Done():
-			c.cron.Stop()
-		}
-	}()
 	return c.ch
 }
 
-func (c *cronScheduler) Shutdown(ctx context.Context) {
+func (c *cronScheduler) Stop(ctx context.Context) {
 	cronCtx := c.cron.Stop()
 	select {
 	case <-ctx.Done():
