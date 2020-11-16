@@ -12,7 +12,6 @@ import (
 	"github.com/zhenzou/richman"
 	"github.com/zhenzou/richman/conf"
 	"github.com/zhenzou/richman/pkg/stock"
-	"github.com/zhenzou/richman/utils"
 )
 
 var (
@@ -30,75 +29,11 @@ func init() {
 	}
 }
 
-func initTasks(conf conf.Config) map[string]richman.Task {
-	tasks := make(map[string]richman.Task)
-
-	for name, task := range conf.Tasks {
-		switch task.Type {
-		case "stocks":
-			cfg := richman.StockTaskConfig{}
-			err := task.Params.Unmarshal(&cfg)
-			if err != nil {
-				log.Println("read stock config error:", err.Error())
-				utils.Die()
-			}
-			stockTask := richman.NewStockTask(cfg, handleStock)
-			tasks[name] = stockTask
-		default:
-			log.Printf("%s task does not support for now\n", task.Type)
-		}
-	}
-
-	return tasks
-}
-
-func initJobs(conf conf.Config, tasks map[string]richman.Task) map[string]richman.Job {
-
-	jobs := map[string]richman.Job{}
-
-	for name, job := range conf.Jobs {
-		switch job.Schedule.Type {
-		case "cron":
-			cfg := richman.CronSchedulerConfig{}
-			err := job.Schedule.Params.Unmarshal(&cfg)
-			if err != nil {
-				log.Printf("[job] %s read config error \n", name)
-			}
-			scheduler := richman.NewCronScheduler(cfg)
-			task, ok := tasks[job.Task]
-			if !ok {
-				log.Printf("[job] task %s not found for %s\n", job.Task, name)
-			}
-			jobs[name] = richman.NewJob(name, scheduler, task)
-		default:
-			log.Printf("%s scheduler does not support for now\n", job.Schedule.Type)
-		}
-	}
-
-	return jobs
-}
-
 var (
 	monitor    richman.Monitor
 	titleQueue chan string
 	config     conf.Config
 )
-
-func initMonitor() {
-	tasks := initTasks(config)
-
-	jobs := initJobs(config, tasks)
-
-	monitor = richman.NewMonitor()
-
-	for name, job := range jobs {
-		err := monitor.AddJob(name, job)
-		if err != nil {
-			log.Println("add job error:", err.Error())
-			utils.Die()
-		}
-	}
-}
 
 func handleStock(ctx context.Context, stock stock.Stock) error {
 	title := fmt.Sprintf("%s %s", stock.Name, stock.IncreaseRate())
@@ -131,7 +66,7 @@ func start() {
 
 	config = conf.Load()
 
-	initMonitor()
+	monitor = richman.NewMonitor(config.Monitor)
 
 	titleQueue = make(chan string, 2)
 

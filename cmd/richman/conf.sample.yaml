@@ -1,15 +1,16 @@
 refresh: 1s
-tasks:
-  get-stocks:
-    type: "stocks"
-    params:
-      provider: "sina"
-      stocks: [ "sz002594" ]
-
-jobs:
-  monitor-stocks:
-    schedule:
-      type: "cron"
+monitor:
+  tasks:
+    get-stocks:
+      type: "stocks"
       params:
-        cron: '*/6 * * * * *'
-    task: "get-stocks"
+        provider: "sina"
+        stocks: [ "sz002594" ]
+
+  jobs:
+    monitor-stocks:
+      schedule:
+        type: "cron"
+        params:
+          cron: '*/6 * * * * *'
+      task: "get-stocks"

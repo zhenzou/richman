@@ -3,7 +3,7 @@ module github.com/zhenzou/richman
 go 1.15
 
 require (
-	github.com/getlantern/systray v1.0.5 // indirect
+	github.com/getlantern/systray v1.0.5
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shopspring/decimal v1.2.0
