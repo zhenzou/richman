@@ -63,8 +63,21 @@ func loopUpdateTitle() {
 	}
 }
 
-func start() {
+func initTray() {
 	systray.SetTitle("Richman")
+
+	quitItem := systray.AddMenuItem("Quit", "quit")
+
+	go func() {
+		select {
+		case _ = <-quitItem.ClickedCh:
+			systray.Quit()
+		}
+	}()
+}
+
+func start() {
+	initTray()
 
 	config = conf.Load()
 
