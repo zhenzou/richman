@@ -13,6 +13,8 @@ func GetProvider(name string) Provider {
 	switch name {
 	case "sina":
 		return NewSina()
+	case "xueqiu":
+		return NewXueQiu()
 	default:
 		panic(errors.New("unsupported provider"))
 	}

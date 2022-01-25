@@ -37,7 +37,7 @@ var (
 	config     conf.Config
 )
 
-func handleStock(ctx context.Context, stock stock.Stock) error {
+func displayStock(ctx context.Context, stock stock.Stock) error {
 	title := fmt.Sprintf("%s %s", stock.Name, stock.IncreaseRate())
 	enqueue(title)
 	return nil
@@ -83,16 +83,15 @@ func start() {
 
 	monitor = richman.NewMonitor(config.Monitor)
 
-	initTasks(config)
+	initAndRegisterTasks(config)
 
 	titleQueue = make(chan string, config.Queue)
-
 	go loopUpdateTitle()
 
 	monitor.Start()
 }
 
-func initTasks(conf conf.Config) {
+func initAndRegisterTasks(conf conf.Config) {
 	for name, config := range conf.Tasks {
 		switch config.Type {
 		case "stocks":
@@ -102,13 +101,14 @@ func initTasks(conf conf.Config) {
 				log.Println("read stock config error:", err.Error())
 				utils.Die()
 			}
-			task := tasks.NewStockTask(cfg, handleStock)
+			task := tasks.NewStockTask(cfg, displayStock)
 			_ = monitor.RegisterTask(name, task)
 		default:
 			log.Printf("%s config does not support for now\n", config.Type)
 		}
 	}
 }
+
 func exit() {
 	ctx, cancelFun2 := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFun2()

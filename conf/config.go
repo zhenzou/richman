@@ -20,7 +20,7 @@ tasks:
   get-stocks:
     type: "stocks"
     params:
-      provider: "sina"
+      provider: "xueqiu"
       stocks: [ "sz002594" ]
 
 monitor:
